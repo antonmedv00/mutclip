@@ -1,7 +1,7 @@
 package net
 
 import (
-	pb "mutclip/pkg/pb/clip"
+	pb "mutclip.server/pkg/pb/clip"
 
 	"google.golang.org/protobuf/proto"
 )

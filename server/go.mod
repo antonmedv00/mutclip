@@ -1,4 +1,4 @@
-module mutclip
+module mutclip.server
 
 go 1.23.4
 

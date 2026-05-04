@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"mutclip/pkg/clipservice"
-	"mutclip/pkg/net"
+	"mutclip.server/pkg/clipservice"
+	"mutclip.server/pkg/net"
 
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"

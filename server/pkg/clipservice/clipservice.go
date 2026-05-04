@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"mutclip/pkg/net"
-	pb "mutclip/pkg/pb/clip"
+	"mutclip.server/pkg/net"
+	pb "mutclip.server/pkg/pb/clip"
 
 	"github.com/charmbracelet/log"
 )
