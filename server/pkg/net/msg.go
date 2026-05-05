@@ -1,6 +1,7 @@
 package net
 
 import (
+	"mutclip.server/pkg/fail"
 	pb "mutclip.server/pkg/pb/clip"
 
 	"google.golang.org/protobuf/proto"
@@ -15,10 +16,9 @@ type OutMessage = *pb.Message
 
 func In(cid CID, b []byte) (*InMessage, error) {
 	m := &pb.Message{}
-
 	err := proto.Unmarshal(b, m)
 	if err != nil {
-		return nil, err
+		return nil, fail.Wrap(err, 6, "Error while decoding protobuf message")
 	}
 
 	return &InMessage{Cid: cid, Message: m}, nil
@@ -34,9 +34,5 @@ func Out(m OutMessage) []byte {
 }
 
 func Err(err error) OutMessage {
-	return &pb.Message{Msg: &pb.Message_Err{Err: &pb.Error{Desc: err.Error(), Fatal: false}}}
-}
-
-func Fatal(err error) OutMessage {
-	return &pb.Message{Msg: &pb.Message_Err{Err: &pb.Error{Desc: err.Error(), Fatal: true}}}
+	return &pb.Message{Msg: &pb.Message_Err{Err: &pb.Error{Msg: err.Error()}}}
 }

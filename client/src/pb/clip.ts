@@ -40,8 +40,7 @@ export interface Ack {
 }
 
 export interface Error {
-  fatal: boolean;
-  desc: string;
+  msg: string;
 }
 
 function createBaseMessage(): Message {
@@ -499,16 +498,13 @@ export const Ack: MessageFns<Ack> = {
 };
 
 function createBaseError(): Error {
-  return { fatal: false, desc: "" };
+  return { msg: "" };
 }
 
 export const Error: MessageFns<Error> = {
   encode(message: Error, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.fatal !== false) {
-      writer.uint32(8).bool(message.fatal);
-    }
-    if (message.desc !== "") {
-      writer.uint32(18).string(message.desc);
+    if (message.msg !== "") {
+      writer.uint32(10).string(message.msg);
     }
     return writer;
   },
@@ -521,19 +517,11 @@ export const Error: MessageFns<Error> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.fatal = reader.bool();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.desc = reader.string();
+          message.msg = reader.string();
           continue;
         }
       }
@@ -546,19 +534,13 @@ export const Error: MessageFns<Error> = {
   },
 
   fromJSON(object: any): Error {
-    return {
-      fatal: isSet(object.fatal) ? globalThis.Boolean(object.fatal) : false,
-      desc: isSet(object.desc) ? globalThis.String(object.desc) : "",
-    };
+    return { msg: isSet(object.msg) ? globalThis.String(object.msg) : "" };
   },
 
   toJSON(message: Error): unknown {
     const obj: any = {};
-    if (message.fatal !== false) {
-      obj.fatal = message.fatal;
-    }
-    if (message.desc !== "") {
-      obj.desc = message.desc;
+    if (message.msg !== "") {
+      obj.msg = message.msg;
     }
     return obj;
   },
@@ -568,8 +550,7 @@ export const Error: MessageFns<Error> = {
   },
   fromPartial<I extends Exact<DeepPartial<Error>, I>>(object: I): Error {
     const message = createBaseError();
-    message.fatal = object.fatal ?? false;
-    message.desc = object.desc ?? "";
+    message.msg = object.msg ?? "";
     return message;
   },
 };

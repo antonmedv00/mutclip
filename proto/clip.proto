@@ -33,6 +33,5 @@ message NextChunk {}
 message Ack {}
 
 message Error {
-  bool fatal = 1;
-  string desc = 2;
+  string msg = 1;
 }

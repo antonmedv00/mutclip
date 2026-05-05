@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"mutclip.server/pkg/clipservice"
+	"mutclip.server/pkg/fail"
 	"mutclip.server/pkg/net"
 
 	"github.com/charmbracelet/log"
@@ -36,13 +36,13 @@ func main() {
 		CheckOrigin: func(r *http.Request) bool {
 			origin, err := url.Parse(r.Header.Get("Origin"))
 			if err != nil {
-				log.Error(err)
+				_ = fail.Wrap(err, 1, "Error while parsing Origin header").Error()
 				return false
 			}
 
 			_, ok := origins[origin.Hostname()]
 			if !ok {
-				log.Errorf("origin %v denied", origin.Hostname())
+				_ = fail.Fail(2, "Origin %v denied", origin.Hostname()).Error()
 			}
 			return ok
 		},
@@ -70,15 +70,16 @@ func main() {
 
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Error(err)
-			c.AbortWithStatus(500)
+			c.String(500, fail.Wrap(err, 3, "Error while upgrading to websocket").Error())
 			return
 		}
 
 		client, err := s.Connect(id, c.Request.Context())
 		if err != nil {
-			log.Error(err)
-			conn.WriteMessage(websocket.BinaryMessage, net.Out(net.Fatal(err)))
+			conn.WriteMessage(
+				websocket.BinaryMessage,
+				net.Out(net.Err(fail.Scope(err, "Error while connecting to clipboard"))),
+			)
 			return
 		}
 
@@ -87,7 +88,7 @@ func main() {
 			select {
 
 			case <-timer.C:
-				log.Error("websocket deadline expired")
+				log.Warn("websocket deadline expired")
 
 			case <-client.Done():
 
@@ -115,7 +116,7 @@ func main() {
 
 					}
 
-					log.Error(err)
+					_ = fail.Wrap(err, 5, "Error while reading websocket message").Error()
 					return
 				}
 
@@ -126,8 +127,7 @@ func main() {
 				case websocket.BinaryMessage:
 					m, err := net.In(client.Cid, buf)
 					if err != nil {
-						log.Errorf("unable to parse protobuf message: %v", err)
-						client.Out <- net.Err(fmt.Errorf("unexpected message"))
+						client.Out <- net.Err(fail.Wrap(err, 7, "Error while parsing protobuf message"))
 						continue
 					}
 
@@ -137,8 +137,9 @@ func main() {
 					return
 
 				default:
-					log.Errorf("unexpected message of type %v: %v", typ, buf)
-					client.Out <- net.Err(fmt.Errorf("unexpected message"))
+					client.Out <- net.Err(
+						fail.Wrap(fail.SomethingWentWrong("Unexpected message of type %v", typ), 8, "Unexpected websocket message"),
+					)
 
 				}
 			}
@@ -159,7 +160,7 @@ func main() {
 
 					}
 
-					log.Error(err)
+					_ = fail.Wrap(err, 9, "Error while writing websocket message").Error()
 					return
 				}
 			}
@@ -169,13 +170,13 @@ func main() {
 
 		err = conn.Close()
 		if err != nil {
-			log.Error(err)
+			_ = fail.Wrap(err, 10, "Error while closing websocket connection").Error()
 		}
 	})
 
 	log.Infof("Server started on port 5000")
 	err := r.Run(":5000")
 	if err != nil {
-		log.Error(err)
+		_ = fail.Wrap(err, 11, "Error while starting server").Error()
 	}
 }
