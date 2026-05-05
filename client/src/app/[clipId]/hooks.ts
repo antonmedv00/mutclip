@@ -226,12 +226,14 @@ export function useSocketContents() {
             if (socketState.type !== "SendingText" && socketState.type !== "SendingFile") { return }
             setSocketState({ type: "Idle" })
         } else if (m.err) {
-            const err = m.err
-            if (err.fatal) {
-                setSocketState({ type: "Errored", error: new Error(err.desc) })
+            const err = m.err.msg
+
+            const code = err.slice(0, 7)
+            if (code === "E000004") {
+                setSocketState({ type: "Errored", error: new Error(err) })
             } else {
                 setSocketState({ type: "Idle" })
-                pushMessage({ type: MessageType.ERROR, text: err.desc })
+                pushMessage({ type: MessageType.ERROR, text: err })
             }
         } else {
             setSocketState({ type: "Idle" })

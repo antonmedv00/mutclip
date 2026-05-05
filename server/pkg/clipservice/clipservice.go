@@ -312,6 +312,7 @@ func (s *ClipboardService) syncClip(id ClipboardId, srcCid net.CID) {
 
 	}
 
+	log.Infof("[%v] ACK => %v", id, srcCid)
 	err := r.Send(srcCid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
 	if err != nil {
 		if errors.Is(err, net.ErrInvalidCid) {
@@ -320,8 +321,6 @@ func (s *ClipboardService) syncClip(id ClipboardId, srcCid net.CID) {
 			panic("impossible")
 		}
 	}
-
-	log.Infof("[%v] ACK => %v", id, srcCid)
 }
 
 func (s *ClipboardService) processText(id ClipboardId, cid net.CID, m *pb.Text) {
@@ -334,7 +333,6 @@ func (s *ClipboardService) processText(id ClipboardId, cid net.CID, m *pb.Text) 
 	if text == "" {
 		text = "<empty>"
 	}
-
 	log.Infof("[%v] $ <= %v : TXT %v", id, cid, text)
 
 	if file, ok := clip.content.(ContentFile); ok {
@@ -453,7 +451,6 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 
 		log.Infof("[%v] <- %v : OK", id, cid)
 		s.syncClip(id, cid)
-
 		return
 	}
 
