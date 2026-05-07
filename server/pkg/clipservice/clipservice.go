@@ -132,7 +132,7 @@ func (s *ClipboardService) Check(id ClipboardId) bool {
 func (s *ClipboardService) Connect(id ClipboardId, ctx context.Context) (*Client, error) {
 	clip := s.getClip(id)
 	if clip == nil {
-		return nil, fail.Fail(4, "Clipboard with id of %v does not exist", id)
+		return nil, fail.Fail(4, "Clipboard does not exist")
 	}
 
 	clientCtx, clientCancel := context.WithCancel(ctx)
@@ -175,7 +175,7 @@ func (s *ClipboardService) Connect(id ClipboardId, ctx context.Context) (*Client
 
 		err := s.syncClient(id, cid)
 		if err != nil {
-			_ = fail.Scope(err, "Error while synchronizing contents of clipboard %v", id).Error()
+			_ = fail.Scope(err, "[%v] Error while synchronizing clipboard contents for %v", id, cid).Error()
 		}
 	}()
 
@@ -198,7 +198,7 @@ func (s *ClipboardService) syncClient(id ClipboardId, cid net.CID) error {
 		err := r.Send(cid, &pb.Message{Msg: &pb.Message_Text{Text: &pb.Text{Data: content.data}}})
 		if err != nil {
 			if errors.Is(err, net.ErrInvalidCid) {
-				return fail.Fail(12, "Client %v disconnected", cid)
+				return fail.Fail(12, "Client disconnected")
 			}
 
 			panic("impossible")
@@ -217,11 +217,11 @@ func (s *ClipboardService) syncClient(id ClipboardId, cid net.CID) error {
 		tun, err := r.Tunnel(cid)
 		if err != nil {
 			if errors.Is(err, net.ErrInvalidCid) {
-				return fail.Fail(12, "Client %v disconnected", cid)
+				return fail.Fail(12, "Client disconnected")
 			}
 
 			if errors.Is(err, net.ErrDuplicateTun) {
-				return fail.Fail(13, "Client %v is busy", cid)
+				return fail.Fail(13, "Client is busy")
 			}
 
 			panic("impossible")
@@ -241,7 +241,7 @@ func (s *ClipboardService) syncClient(id ClipboardId, cid net.CID) error {
 					fail.Wrap(
 						fail.SomethingWentWrong("Unexpected message: %v", m),
 						14,
-						"Server expected request for next chunk while sending file to %v", cid,
+						"[%v] Server expected request for next chunk while sending file to %v", id, cid,
 					),
 				)
 				continue
@@ -260,7 +260,7 @@ func (s *ClipboardService) syncClient(id ClipboardId, cid net.CID) error {
 			return nil
 		}
 
-		return fail.Fail(15, "Client %v disconnected while receiving file", cid)
+		return fail.Fail(15, "Client disconnected while receiving file")
 
 	default:
 		panic("impossible")
@@ -300,7 +300,7 @@ func (s *ClipboardService) syncClip(id ClipboardId, srcCid net.CID) {
 
 				err := s.syncClient(id, cid)
 				if err != nil {
-					_ = fail.Scope(err, "Error while synchronizing update from %v", srcCid).Error()
+					_ = fail.Scope(err, "[%v] Error while synchronizing update from %v", id, srcCid).Error()
 				}
 			}()
 		}
@@ -316,7 +316,7 @@ func (s *ClipboardService) syncClip(id ClipboardId, srcCid net.CID) {
 	err := r.Send(srcCid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
 	if err != nil {
 		if errors.Is(err, net.ErrInvalidCid) {
-			_ = fail.Fail(16, "Client %v disconnected while updating clipboard", srcCid).Error()
+			_ = fail.Fail(16, "[%v] Client %v disconnected while updating clipboard", id, srcCid).Error()
 		} else {
 			panic("impossible")
 		}
@@ -337,14 +337,14 @@ func (s *ClipboardService) processText(id ClipboardId, cid net.CID, m *pb.Text) 
 
 	if file, ok := clip.content.(ContentFile); ok {
 		if !file.ready {
-			_ = fail.Fail(17, "Update from %v denied while a file is received", cid).Error()
+			_ = fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid).Error()
 
 			// TODO: send error here?
 
 			err := r.Send(cid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
 			if err != nil {
 				if errors.Is(err, net.ErrInvalidCid) {
-					_ = fail.Fail(18, "Client %v disconnected while sending update", cid).Error()
+					_ = fail.Fail(18, "[%v] Client %v disconnected while sending update", id, cid).Error()
 				} else {
 					panic("impossible")
 				}
@@ -366,14 +366,14 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 
 	if file, ok := clip.content.(ContentFile); ok {
 		if !file.ready {
-			_ = fail.Fail(17, "Update from %v denied while a file is received", cid).Error()
+			_ = fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid).Error()
 
-			// TODO: also send error?
+			// TODO: send error here?
 
 			err := r.Send(cid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
 			if err != nil {
 				if errors.Is(err, net.ErrInvalidCid) {
-					_ = fail.Fail(18, "Client %v disconnected while sending update", cid).Error()
+					_ = fail.Fail(18, "[%v] Client %v disconnected while sending update", id, cid).Error()
 				} else {
 					panic("impossible")
 				}
@@ -394,12 +394,12 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 	tun, err := r.Tunnel(cid)
 	if err != nil {
 		if errors.Is(err, net.ErrInvalidCid) {
-			_ = fail.Fail(21, "Client %v disconnected while sending file", cid).Error()
+			_ = fail.Fail(21, "[%v] Client %v disconnected while sending file", id, cid).Error()
 			return
 		}
 
 		if errors.Is(err, net.ErrDuplicateTun) {
-			_ = fail.Fail(22, "Client %v is busy and unable to send file", cid).Error()
+			_ = fail.Fail(22, "[%v] Client %v is busy and unable to send file", id, cid).Error()
 			return
 		}
 
@@ -415,7 +415,11 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 		chunk := m.GetChunk()
 		if chunk == nil {
 			tun.Out <- net.Err(
-				fail.Wrap(fail.SomethingWentWrong("Unexpected message: %v", m), 19, "Server expected chunk while receiving file from %v", cid),
+				fail.Wrap(
+					fail.SomethingWentWrong("Unexpected message: %v", m),
+					19,
+					"[%v] Server expected chunk while receiving file from %v", id, cid,
+				),
 			)
 			return
 		}
@@ -423,14 +427,17 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 		file, ok := clip.content.(ContentFile)
 		if !ok {
 			tun.Out <- net.Err(
-				fail.Scope(fail.SomethingWentWrong("Unexpected state of clipboard contents: %v", clip.content), "Error while receiving file from %v", cid),
+				fail.Scope(
+					fail.SomethingWentWrong("Unexpected state of clipboard contents: %v", clip.content),
+					"[%v] Error while receiving file from %v", id, cid,
+				),
 			)
 			return
 		}
 
 		if int(chunk.GetIndex()) != file.nextChunkIndex {
 			tun.Out <- net.Err(
-				fail.Fail(20, "Server received chunk with index %v, but expected %v", chunk.GetIndex(), file.nextChunkIndex),
+				fail.Fail(20, "[%v] Server received chunk with index %v, but expected %v from %v", id, chunk.GetIndex(), file.nextChunkIndex, cid),
 			)
 			return
 		}
@@ -455,7 +462,7 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 	}
 
 	clip.content = originalContent
-	_ = fail.Fail(23, "Client %v disconnected while sending file", cid).Error()
+	_ = fail.Fail(23, "[%v] Client %v disconnected while sending file", id, cid).Error()
 }
 
 func (s *ClipboardService) Start(id ClipboardId) {
@@ -497,12 +504,12 @@ func (s *ClipboardService) Start(id ClipboardId) {
 			fail.Wrap(
 				fail.SomethingWentWrong("Unexpected message: %v", m),
 				24,
-				"Server expected text or file update from %v", m.Cid,
+				"[%v] Server expected text or file update from %v", id, m.Cid,
 			),
 		))
 		if err != nil {
 			if errors.Is(err, net.ErrInvalidCid) {
-				_ = fail.Fail(25, "Client %v disconnected", m.Cid).Error()
+				_ = fail.Fail(25, "[%v] Client %v disconnected", id, m.Cid).Error()
 				continue
 			}
 

@@ -30,7 +30,7 @@ export default function Uploader({ setFile, disabled }: Props) {
 
     return (
         <>
-            <ControlButton className={disabled ? styles.disabled : styles.upload} onClick={initiateUpload} disabled={disabled}>
+            <ControlButton className={styles.upload} onClick={initiateUpload} disabled={disabled}>
                 <FaUpload />
             </ControlButton>
             <input

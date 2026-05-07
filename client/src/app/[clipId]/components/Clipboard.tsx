@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react"
 import { FaRegTrashCan, FaRegCopy } from "react-icons/fa6"
-import { ClipLoader } from "react-spinners"
+import { Watch } from "react-loader-spinner"
 import ClipboardJS from "clipboard"
 
 import BodyRefContext from "@/contexts/BodyRefContext"
@@ -127,7 +127,7 @@ export default function Clipboard({ clipId }: Props) {
                                     `${socketStatus.type === "SendingFile" ? socketStatus.nextChunk! + 1 : socketStatus.nextChunk}/${socketStatus.header.numChunks}`
                                 }
                             </div>
-                            {socketStatus.type !== "Idle" && <div><ClipLoader /></div>}
+                            {socketStatus.type !== "Idle" && <Watch height={35} width={35} color="#000" />}
                         </div>
                     </div>
                 </div>

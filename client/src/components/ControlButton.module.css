@@ -4,6 +4,10 @@
     color: black;
     background: none;
     transition: all 0.15s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
 }
 
 .disabled {
@@ -11,6 +15,10 @@
     font-size: 2rem;
     color: gray;
     background: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
 }
 
 @media screen and (pointer: fine) {

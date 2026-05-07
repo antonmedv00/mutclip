@@ -70,7 +70,7 @@ func main() {
 
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			c.String(500, fail.Wrap(err, 3, "Error while upgrading to websocket").Error())
+			c.String(500, fail.Wrap(err, 3, "[%v] Error while upgrading to websocket", id).Error())
 			return
 		}
 
@@ -78,7 +78,7 @@ func main() {
 		if err != nil {
 			conn.WriteMessage(
 				websocket.BinaryMessage,
-				net.Out(net.Err(fail.Scope(err, "Error while connecting to clipboard"))),
+				net.Out(net.Err(fail.Scope(err, "[%v] Error while connecting to clipboard", id))),
 			)
 			return
 		}
@@ -116,7 +116,7 @@ func main() {
 
 					}
 
-					_ = fail.Wrap(err, 5, "Error while reading websocket message").Error()
+					_ = fail.Wrap(err, 5, "[%v] Error while reading websocket message", id).Error()
 					return
 				}
 
@@ -127,7 +127,7 @@ func main() {
 				case websocket.BinaryMessage:
 					m, err := net.In(client.Cid, buf)
 					if err != nil {
-						client.Out <- net.Err(fail.Wrap(err, 7, "Error while parsing protobuf message"))
+						client.Out <- net.Err(fail.Wrap(err, 7, "[%v] Error while parsing protobuf message", id))
 						continue
 					}
 
@@ -138,7 +138,11 @@ func main() {
 
 				default:
 					client.Out <- net.Err(
-						fail.Wrap(fail.SomethingWentWrong("Unexpected message of type %v", typ), 8, "Unexpected websocket message"),
+						fail.Wrap(
+							fail.SomethingWentWrong("Unexpected message of type %v", typ),
+							8,
+							"[%v] Unexpected websocket message", id,
+						),
 					)
 
 				}
@@ -160,7 +164,7 @@ func main() {
 
 					}
 
-					_ = fail.Wrap(err, 9, "Error while writing websocket message").Error()
+					_ = fail.Wrap(err, 9, "[%v] Error while writing websocket message", id).Error()
 					return
 				}
 			}
@@ -170,7 +174,7 @@ func main() {
 
 		err = conn.Close()
 		if err != nil {
-			_ = fail.Wrap(err, 10, "Error while closing websocket connection").Error()
+			_ = fail.Wrap(err, 10, "[%v] Error while closing websocket connection", id).Error()
 		}
 	})
 

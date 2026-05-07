@@ -1,7 +1,7 @@
 "use client"
 
 import { useContext, useEffect, useTransition } from "react"
-import { ClipLoader } from "react-spinners"
+import { Watch } from "react-loader-spinner"
 
 import { clipRedirect } from "./actions"
 import ControlButton from "@/components/ControlButton"
@@ -42,7 +42,7 @@ export default function Page() {
 
             {isPending &&
                 <div className={styles.loader}>
-                    <ClipLoader />
+                    <Watch width={60} height={60} color="#000" />
                 </div>
             }
         </div>
