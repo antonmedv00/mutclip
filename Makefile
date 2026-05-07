@@ -1,8 +1,7 @@
 build: build-server build-client
 
+image: image-server image-client
 push: push-server push-client
-
-build-local: build-server-local build-client-local
 
 init: init-client proto
 
@@ -21,33 +20,35 @@ reproto: clean-proto proto
 
 
 build-server:
+	rm -rf server/out
+	mkdir -p server/out
+	cp .env server/out
+	cd server && go build -o out/server -ldflags '-s -w' ./cmd/server && tar czvf out/server.tar.gz --transform 's,^out/,server/,' out/server out/.env
+
+image-server:
 	docker build server -t aantonm/mutclip:server
 
 push-server:
 	docker push aantonm/mutclip:server
 
-build-server-local:
-	mkdir -p server/out
-	cp .env server/out
-	cd server && go build -o out/server -ldflags '-s -w' ./cmd/server && tar czvf out/server.tar.gz --transform 's,^out/,server/,' out/server out/.env
-
 dev-server:
 	set -a && . ./.env && set +a && cd server && CI=1 CLICOLOR_FORCE=1 air
 
 clean-server:
-	rm -rf server/out
+	rm -rf server/out server/tmp
 
 
 build-client:
+	rm -rf client/out
+	mkdir -p client/out
+	cp .env client/out
+	cd client && npm run build && cp -rT .next/standalone out && cp -r .next/static out/.next && tar czvf out/client.tar.gz --transform 's,^out/,client/,' out/server.js out/package.json out/node_modules out/.next out/.env
+
+image-client:
 	docker build client -t aantonm/mutclip:client
 
 push-client:
 	docker push aantonm/mutclip:client
-
-build-client-local:
-	mkdir -p client/out
-	cp .env client/out
-	cd client && npm run build && cp -rT .next/standalone out && cp -r .next/static out/.next && tar czvf out/client.tar.gz --transform 's,^out/,client/,' out/server.js out/package.json out/node_modules out/.next out/.env
 
 dev-client:
 	set -a && . ./.env && set +a && cd client && npm run dev
