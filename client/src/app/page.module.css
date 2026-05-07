@@ -14,16 +14,18 @@
 
 .generate>button {
     padding: 8px;
-    border: none !important;
+    border: 0px transparent !important;
     border-radius: 10px;
     color: white !important;
     background-color: black !important;
     font-size: 1.5em !important;
     margin-bottom: 30px;
+    transition: all 0.15s ease, border-width 0.1s ease;
 }
 
 @media screen and (pointer: fine) {
-    .generate>button:hover {
+    .generate>button:hover:not(:active) {
+        transform: scale(1.05);
         color: white !important;
         border: 3px solid magenta !important;
     }

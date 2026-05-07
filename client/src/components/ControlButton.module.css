@@ -3,7 +3,7 @@
     font-size: 2rem;
     color: black;
     background: none;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
     display: flex;
     justify-content: center;
     align-items: center;
