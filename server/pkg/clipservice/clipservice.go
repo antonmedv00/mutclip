@@ -300,7 +300,7 @@ func (s *ClipboardService) syncClip(id ClipboardId, srcCid net.CID) {
 
 				err := s.syncClient(id, cid)
 				if err != nil {
-					_ = fail.Scope(err, "[%v] Error while synchronizing update from %v", id, srcCid).Error()
+					_ = fail.Scope(err, "[%v] Error while synchronizing update from %v with %v", id, srcCid, cid).Error()
 				}
 			}()
 		}
@@ -337,11 +337,7 @@ func (s *ClipboardService) processText(id ClipboardId, cid net.CID, m *pb.Text) 
 
 	if file, ok := clip.content.(ContentFile); ok {
 		if !file.ready {
-			_ = fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid).Error()
-
-			// TODO: send error here?
-
-			err := r.Send(cid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
+			err := r.Send(cid, net.Err(fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid)))
 			if err != nil {
 				if errors.Is(err, net.ErrInvalidCid) {
 					_ = fail.Fail(18, "[%v] Client %v disconnected while sending update", id, cid).Error()
@@ -366,11 +362,7 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 
 	if file, ok := clip.content.(ContentFile); ok {
 		if !file.ready {
-			_ = fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid).Error()
-
-			// TODO: send error here?
-
-			err := r.Send(cid, &pb.Message{Msg: &pb.Message_Ack{Ack: &pb.Ack{}}})
+			err := r.Send(cid, net.Err(fail.Fail(17, "[%v] Update from %v denied while a file is received", id, cid)))
 			if err != nil {
 				if errors.Is(err, net.ErrInvalidCid) {
 					_ = fail.Fail(18, "[%v] Client %v disconnected while sending update", id, cid).Error()
@@ -421,7 +413,7 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 					"[%v] Server expected chunk while receiving file from %v", id, cid,
 				),
 			)
-			return
+			continue
 		}
 
 		file, ok := clip.content.(ContentFile)
@@ -432,6 +424,8 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 					"[%v] Error while receiving file from %v", id, cid,
 				),
 			)
+
+			clip.content = originalContent
 			return
 		}
 
@@ -439,7 +433,7 @@ func (s *ClipboardService) processFile(id ClipboardId, timer *time.Timer, cid ne
 			tun.Out <- net.Err(
 				fail.Fail(20, "[%v] Server received chunk with index %v, but expected %v from %v", id, chunk.GetIndex(), file.nextChunkIndex, cid),
 			)
-			return
+			continue
 		}
 
 		log.Infof("[%v] <- %v : %v/%v", id, cid, chunk.GetIndex()+1, file.numChunks)

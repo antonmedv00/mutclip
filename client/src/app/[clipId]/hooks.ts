@@ -229,11 +229,14 @@ export function useSocketContents() {
             const err = m.err.msg
 
             const code = err.slice(0, 7)
-            if (code === "E000004") {
-                setSocketState({ type: "Errored", error: new Error(err) })
-            } else {
-                setSocketState({ type: "Idle" })
-                pushMessage({ type: MessageType.ERROR, text: err })
+            switch (code) {
+                case "E000004":
+                    setSocketState({ type: "Errored", error: new Error(err) })
+                    break
+
+                default:
+                    setSocketState({ type: "Idle" })
+                    pushMessage({ type: MessageType.ERROR, text: err })
             }
         } else {
             setSocketState({ type: "Idle" })

@@ -23,7 +23,7 @@
 
 @media screen and (pointer: fine) {
     .button:hover {
-        color: #d44e9f;
+        color: orangered;
         transform: scale(1.1);
     }
 
